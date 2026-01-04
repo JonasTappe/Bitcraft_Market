@@ -7,15 +7,22 @@
 
 class Settings:
     def __init__(self):
-        # File paths and names
-        self.base_file_path = "./data/"
-        self.market_data_filename = "market_data.json"
-        self.chat_data_filename = "chat_data.json"
 
+        # settings a user needs to configure
         # market filters
         self.max_market_data_age_hours = 5
         self.max_tier = 2
         self.target_region = 7
+
+
+
+
+        # ----------------- settings below this line usually do not need to be changed -----------------
+
+        # File paths and names
+        self.base_file_path = "./data/"
+        self.market_data_filename = "market_data.json"
+        self.chat_data_filename = "chat_data.json"
 
         # API Endpoints
         self.base_url = "https://bitjita.com/api/"
