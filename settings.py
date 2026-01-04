@@ -13,6 +13,7 @@ class Settings:
         self.chat_data_filename = "chat_data.json"
 
         # market filters
+        self.max_market_data_age_hours = 5
         self.max_tier = 2
         self.target_region = 7
 
