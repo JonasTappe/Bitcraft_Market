@@ -12,6 +12,7 @@ from statistics import mean, median
 
 def run_market_script(s, dt_string):
 
+    # load or fetch market data
     market_data_files, file_age_hours = market_data_files_check(s)
 
     if not market_data_files or file_age_hours > s.max_market_data_age_hours:
@@ -21,35 +22,34 @@ def run_market_script(s, dt_string):
         print('Loading market data from file...')
         data = load_market_data(s)
     
+    # find suitable items in current market overview
     if data:
         items = data['data']["items"]
         # filter market overview for suitable items
         suitable_items = find_suitable_items(s, items)
         print(f'Found {len(suitable_items)} suitable items (tier {s.min_tier} to {s.max_tier} with buy orders).')
 
-        
+    # load data for suitable items if it exists
+    data_suitable_items = load_suitable_items_data(s)
 
-        # get detailed data for suitable items
-        if suitable_items:
-            data_suitable_items = fetch_detailed_data_for_items(s, suitable_items, dt_string)
+    # fetch detailed data for suitable items if not loaded
+    if suitable_items and not data_suitable_items:
+        data_suitable_items = load_suitable_items_data(s)
+
 
     # ----------------------------------------------------------------------------------------
     # analysis of the suitable items
 
-    # load data
-    data_suitable_items = load_suitable_items_data(s)
-
-    if not data_suitable_items:
-        print("No suitable items data files found. Skipping analysis.")
-    else:
+    if data_suitable_items:
+        print('Running analysis on suitable items...')
         # run analysis
-        extracted_data = run_analysis(s, data_suitable_items)
+        extracted_data = extract_relevant_information(s, data_suitable_items)
         
         # sort the data
-        extracted_data = sort_data(extracted_data)
+        sorted_data = sort_data(extracted_data)
 
         # write data to human readable file
-        write_human_readable_output(s, extracted_data, dt_string)
+        write_human_readable_output(s, sorted_data, dt_string)
     
 
 
@@ -111,7 +111,7 @@ def fetch_detailed_data_for_items(s, suitable_items, dt_string):
 
     return data_suitable_items
 
-def run_analysis(s, data_suitable_items):
+def extract_relevant_information(s, data_suitable_items):
     # get buy orders
     extracted_data = []    
     for entry in data_suitable_items:
