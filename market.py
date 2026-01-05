@@ -34,7 +34,7 @@ def run_market_script(s, dt_string):
 
     # fetch detailed data for suitable items if not loaded
     if suitable_items and not data_suitable_items:
-        data_suitable_items = load_suitable_items_data(s)
+        data_suitable_items = fetch_detailed_data_for_items(s, suitable_items, dt_string)
 
 
     # ----------------------------------------------------------------------------------------
@@ -109,7 +109,7 @@ def fetch_detailed_data_for_items(s, suitable_items, dt_string):
         data_suitable_items.append(data_item)
     
     print(f'saving data for {len(data_suitable_items)} suitable items.')
-    with open(s.base_file_path + "suitable_items_data_" + dt_string + ".json", "w") as f:
+    with open(s.base_file_path + "suitable_items_data_" + dt_string + "_" + str(s.min_tier) + str(s.max_tier) + str(s.target_region) + ".json", "w") as f:
         json.dump(data_suitable_items, f, indent=4)
 
     return data_suitable_items

@@ -12,7 +12,7 @@ class Settings:
 
         # market filters
         self.max_market_data_age_hours = 5 # if market data file is older than this, fetch new data (fetching takes time)
-        self.max_tier = 2 # maximum tier of items to consider
+        self.max_tier = 4 # maximum tier of items to consider
         self.min_tier = 1 # minimum tier of items to consider
         self.target_region = 7 # region ID to filter for buyers
 
