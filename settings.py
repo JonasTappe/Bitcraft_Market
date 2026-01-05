@@ -19,8 +19,17 @@ class Settings:
 
 
 
-        # ----------------- settings below this line usually do not need to be changed -----------------
 
+
+        # advanced settings (can usually be left at default):
+        self.max_old_files_to_keep = 10   # maximum number of old files to keep when cleaning up
+
+
+
+
+
+
+        # ----------------- settings below this line usually do not need to be changed -----------------
         # File paths and names
         self.base_file_path = "./data/"
         self.market_data_filename = "market_data.json"

@@ -23,10 +23,10 @@ def run_cleanup_script(s):
 
 def keep_only_3_most_recent_files(filenames, s):
     # keep only the 3 most recent files, delete the rest
-    if len(filenames) > 3:
+    if len(filenames) > s.max_old_files_to_keep:
         # sort files by creation time
         filenames.sort(key=lambda x: os.path.getctime(os.path.join(s.base_file_path, x)))
-        files_to_delete = filenames[:-3]  # all but the last 3
+        files_to_delete = filenames[:-s.max_old_files_to_keep]  # all but the last max_old_files_to_keep
         for f in files_to_delete:
             os.remove(os.path.join(s.base_file_path, f))
         print(f"Deleted {len(files_to_delete)} old files.")

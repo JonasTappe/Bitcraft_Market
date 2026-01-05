@@ -16,12 +16,18 @@ def run_market_script(s, dt_string):
 
     if not market_data_files or file_age_hours > s.max_market_data_age_hours:
         print('No recent market data file found, fetching new data...')
-        data = fetch_market_overview(s)
-        items = data["items"]
-
+        data = fetch_market_overview(s, dt_string)
+    else:
+        print('Loading market data from file...')
+        data = load_market_data(s)
+    
+    if data:
+        items = data['data']["items"]
         # filter market overview for suitable items
         suitable_items = find_suitable_items(s, items)
         print(f'Found {len(suitable_items)} suitable items (tier {s.min_tier} to {s.max_tier} with buy orders).')
+
+        
 
         # get detailed data for suitable items
         if suitable_items:
@@ -60,8 +66,8 @@ def market_data_files_check(s):
 
     return market_data_files, file_age_hours
 
-def fetch_market_overview(s):
-        # fetch new market data
+def fetch_market_overview(s, dt_string):
+    # fetch new market data
     url = s.endpoints["market"]
     response = requests.get(url)
     data_market = response.json()
@@ -164,9 +170,23 @@ def load_suitable_items_data(s):
 
     return data_suitable_items
 
+def load_market_data(s):
+    # list all market data files
+    files = os.listdir(s.base_file_path)
+    market_data_files = [f for f in files if f.startswith("market_data_") and f.endswith(".json")]
+    if not market_data_files:
+        return False
+    # find newest file
+    newest_file = max(market_data_files, key=lambda x: os.path.getctime(os.path.join(s.base_file_path, x)))
+    # load data from newest file
+    with open(s.base_file_path + newest_file, "r") as f:
+        data_market = json.load(f)
+
+    return data_market
+
 def sort_data(extracted_data):
     # sort by 1. mean order volume 2. median order volume descending
-    extracted_data.sort(key=lambda x: (mean(x['order_volumes']), median(x['order_volumes'])), reverse=True)
+    extracted_data.sort(key=lambda x: (median(x['order_volumes']), mean(x['order_volumes'])), reverse=True)
     return extracted_data
 
 def write_human_readable_output(s, extracted_data, dt_string):
