@@ -45,8 +45,11 @@ def run_market_script(s, dt_string):
         # run analysis
         extracted_data = extract_relevant_information(s, data_suitable_items)
         
+        # add score to items
+        scored_data = calculate_scores(s, extracted_data)
+
         # sort the data
-        sorted_data = sort_data(extracted_data)
+        sorted_data = sorted(scored_data, key=lambda x: x['score'], reverse=True)
 
         # write data to human readable file
         write_human_readable_output(s, sorted_data, dt_string)
@@ -151,7 +154,10 @@ def extract_relevant_information(s, data_suitable_items):
             'quantities': quantities,
             'claim_ids': claim_ids,
             'claim_names': claim_names,
-            'order_volumes': order_volumes
+            'order_volumes': order_volumes,
+            'total_volume': sum(order_volumes) if order_volumes else 0,
+            'average_volume': mean(order_volumes) if order_volumes else 0,
+            'median_volume': median(order_volumes) if order_volumes else 0,
         })
 
     return extracted_data
@@ -184,15 +190,33 @@ def load_market_data(s):
 
     return data_market
 
-def sort_data(extracted_data):
-    # sort by 1. mean order volume 2. median order volume descending
-    extracted_data.sort(key=lambda x: (median(x['order_volumes']), mean(x['order_volumes'])), reverse=True)
-    return extracted_data
+def calculate_scores(s, data):
+    # normalize total_volume, average_volume and mean volume to 0-1 scale
+    total_volumes = [item['total_volume'] for item in data]
+    average_volumes = [item['average_volume'] for item in data]
+    median_volumes = [item['median_volume'] for item in data]
+    
+    max_total_volume = max(total_volumes) if total_volumes else 1
+    max_average_volume = max(average_volumes) if average_volumes else 1
+    max_median_volume = max(median_volumes) if median_volumes else 1
+    
+    for item in data:
+        norm_total_volume = item['total_volume'] / max_total_volume if max_total_volume > 0 else 0
+        norm_average_volume = item['average_volume'] / max_average_volume if max_average_volume > 0 else 0
+        norm_median_volume = item['median_volume'] / max_median_volume if max_median_volume > 0 else 0
+        
+        # calculate score
+        score = (norm_total_volume + norm_average_volume) / 2
+        item['score'] = score
 
-def write_human_readable_output(s, extracted_data, dt_string):
+    return data
+
+
+def write_human_readable_output(s, data, dt_string):
     with open(s.base_file_path + "extracted_market_data_" + dt_string + ".txt", "w") as f:
-        for item in extracted_data:
+        for item in data:
             f.write(f"Item: {item['name']}\n")
+            f.write(f"Score: {item['score']}\n")
             for price, qty, claim_name, order_volume in zip(item['unit_prices'], item['quantities'], item['claim_names'], item['order_volumes']):
                 f.write(f"  Price: {price}, Quantity: {qty}, Buyer: {claim_name}, Order Volume: {order_volume}\n")
             f.write("\n")
