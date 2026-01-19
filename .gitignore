@@ -1,3 +1,5 @@
 __pycache__
 data/
 ideas.txt
+/venv
+start_frontend.sh

@@ -56,6 +56,9 @@ def run_market_script(s, dt_string):
 
         # write data to human readable file
         write_human_readable_output(s, sorted_data, dt_string)
+        
+        # write data to json file for frontend
+        write_json_output(s, sorted_data, dt_string)
     
 
 
@@ -238,4 +241,8 @@ def write_human_readable_output(s, data, dt_string):
             f.write(f"Score: {item['score']}\n")
             for price, qty, claim_name, order_volume in zip(item['unit_prices'], item['quantities'], item['claim_names'], item['order_volumes']):
                 f.write(f"  Price: {price}, Quantity: {qty}, Buyer: {claim_name}, Order Volume: {order_volume}\n")
-            f.write("\n")
+                f.write("\n")
+
+def write_json_output(s, data, dt_string):
+    with open(s.base_file_path + "analyzed_market_data_" + dt_string + ".json", "w") as f:
+        json.dump(data, f, indent=4)
