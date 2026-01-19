@@ -11,8 +11,8 @@ class Settings:
         # settings a user needs to configure:
 
         # market filters
-        self.max_market_data_age_hours = 5 # if market data file is older than this, fetch new data (fetching takes time)
-        self.max_tier = 4 # maximum tier of items to consider
+        self.max_market_data_age_hours = 0.9 # if market data file is older than this, fetch new data (fetching takes time)
+        self.max_tier = 10 # maximum tier of items to consider
         self.min_tier = 1 # minimum tier of items to consider
         self.target_region = 7 # region ID to filter for buyers
 
@@ -33,6 +33,9 @@ class Settings:
         # ----------------- settings below this line usually do not need to be changed -----------------
         # File paths and names
         self.base_file_path = "./data/"
+        import os
+        if not os.path.exists(self.base_file_path):
+            os.makedirs(self.base_file_path)
         self.market_data_filename = "market_data.json"
         self.chat_data_filename = "chat_data.json"
 

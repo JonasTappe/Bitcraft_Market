@@ -6,10 +6,15 @@ import json
 import os
 import glob
 from datetime import datetime
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 # Initialize the Dash app
 app = dash.Dash(__name__)
 app.title = "Bitcraft Market Analysis"
+
+# Apply ProxyFix for Caddy/Reverse Proxy compatibility
+app.server.wsgi_app = ProxyFix(app.server.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
+
 
 # Layout
 app.layout = html.Div([
@@ -124,4 +129,4 @@ def update_metrics(n):
     return figure, df.to_dict('records'), f"Data loaded from: {os.path.basename(latest_file)} (Last modified: {time_str})"
 
 if __name__ == '__main__':
-    app.run(debug=True, host='127.0.0.1')
+    app.run(debug=False, host='0.0.0.0', port=8052)
