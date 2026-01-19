@@ -18,13 +18,12 @@ app.server.wsgi_app = ProxyFix(app.server.wsgi_app, x_for=1, x_proto=1, x_host=1
 
 # Layout
 app.layout = html.Div([
-    html.H1("Bitcraft Market Analysis", style={'textAlign': 'center'}),
+    html.H1("Bitcraft Market Analysis", style={'textAlign': 'center', 'color': '#FFFFFF'}),
     
-    html.Div(id='last-updated', style={'textAlign': 'center', 'marginBottom': '20px'}),
-    
-    html.Div([
-        dcc.Graph(id='market-graph')
-    ], style={'width': '100%', 'display': 'inline-block'}),
+    html.Div("This project is fanmade and not associated with BitCraft or Clockwork Labs", 
+             style={'textAlign': 'center', 'marginBottom': '10px', 'fontStyle': 'italic', 'color': '#AAAAAA'}),
+
+    html.Div(id='last-updated', style={'textAlign': 'center', 'marginBottom': '20px', 'color': '#E0E0E0'}),
     
     html.Div([
         dash_table.DataTable(
@@ -40,9 +39,19 @@ app.layout = html.Div([
                 {"name": "Max Price", "id": "max_price"},
             ],
             style_table={'overflowX': 'auto'},
+            style_header={
+                'backgroundColor': '#1F1F1F',
+                'color': 'white',
+                'fontWeight': 'bold',
+                'border': '1px solid #333'
+            },
+            style_data={
+                'backgroundColor': '#121212',
+                'color': '#E0E0E0',
+                'border': '1px solid #333'
+            },
             sort_action="native",
             sort_mode="multi",
-            filter_action="native",
             page_action="native",
             page_current=0,
             page_size=20,
@@ -54,7 +63,7 @@ app.layout = html.Div([
         interval=60*1000, # in milliseconds (1 minute)
         n_intervals=0
     )
-])
+], style={'backgroundColor': '#121212', 'minHeight': '100vh', 'padding': '20px'})
 
 def get_latest_data_file():
     # Use absolute path or relative if consistent. Assuming ./data/ is where files are.
@@ -66,8 +75,7 @@ def get_latest_data_file():
     return latest_file
 
 @app.callback(
-    [Output('market-graph', 'figure'),
-     Output('market-table', 'data'),
+    [Output('market-table', 'data'),
      Output('last-updated', 'children')],
     [Input('interval-component', 'n_intervals')]
 )
@@ -75,13 +83,13 @@ def update_metrics(n):
     latest_file = get_latest_data_file()
     
     if latest_file is None:
-        return {}, [], "No data found."
+        return [], "No data found."
         
     try:
         with open(latest_file, 'r') as f:
             data = json.load(f)
     except Exception as e:
-        return {}, [], f"Error loading file: {str(e)}"
+        return [], f"Error loading file: {str(e)}"
     
     # Process data for DataFrame
     df_data = []
@@ -103,30 +111,14 @@ def update_metrics(n):
     df = pd.DataFrame(df_data)
     
     if df.empty:
-         return {}, [], f"Data loaded from {os.path.basename(latest_file)} but it is empty."
+         return [], f"Data loaded from {os.path.basename(latest_file)} but it is empty."
 
-    # Sort by score by default for the graph
-    df_sorted = df.sort_values(by='score', ascending=False).head(50) # Top 50 for graph
-    
-    # Create Graph
-    figure = {
-        'data': [
-            {'x': df_sorted['name'], 'y': df_sorted['score'], 'type': 'bar', 'name': 'Score'},
-        ],
-        'layout': {
-            'title': 'Top 50 Items by Score',
-            'xaxis': {'title': 'Item Name', 'tickangle': -45},
-            'yaxis': {'title': 'Score'},
-            'margin': {'b': 150} # Space for x-axis labels
-        }
-    }
-    
     # Timestamp from filename or modification time
     timestamp = os.path.getmtime(latest_file)
     dt_object = datetime.fromtimestamp(timestamp)
     time_str = dt_object.strftime("%Y-%m-%d %H:%M:%S")
 
-    return figure, df.to_dict('records'), f"Data loaded from: {os.path.basename(latest_file)} (Last modified: {time_str})"
+    return df.to_dict('records'), f"Data loaded from: {os.path.basename(latest_file)} (Last modified: {time_str})"
 
 if __name__ == '__main__':
     app.run(debug=False, host='0.0.0.0', port=8052)
