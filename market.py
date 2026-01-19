@@ -13,9 +13,9 @@ from statistics import mean, median
 def run_market_script(s, dt_string):
 
     # load or fetch market data
-    market_data_files, file_age_hours = market_data_files_check(s)
+    market_data_files, market_file_age_hours = market_data_files_check(s)
 
-    if not market_data_files or file_age_hours > s.max_market_data_age_hours:
+    if not market_data_files or market_file_age_hours > s.max_market_data_age_hours:
         print('No recent market data file found, fetching new data...')
         data = fetch_market_overview(s, dt_string)
     else:
@@ -30,11 +30,14 @@ def run_market_script(s, dt_string):
         print(f'Found {len(suitable_items)} suitable items (tier {s.min_tier} to {s.max_tier} with buy orders).')
 
     # load data for suitable items if it exists
-    data_suitable_items = load_suitable_items_data(s)
-
-    # fetch detailed data for suitable items if not loaded
-    if suitable_items and not data_suitable_items:
+    suitable_items_data_files, suitable_file_age_hours = suitable_items_data_files_check(s)
+    if not suitable_items_data_files or suitable_file_age_hours > s.max_market_data_age_hours:
+        print('No recent suitable items data file found, fetching detailed data for suitable items...')
         data_suitable_items = fetch_detailed_data_for_items(s, suitable_items, dt_string)
+    else:
+        print('Loading suitable items data from file...')
+        data_suitable_items = load_suitable_items_data(s)
+
 
 
     # ----------------------------------------------------------------------------------------
@@ -60,14 +63,30 @@ def market_data_files_check(s):
     # list all market data files
     files = os.listdir(s.base_file_path)
     market_data_files = [f for f in files if f.startswith("market_data_") and f.endswith(".json")]
+    file_age_hours = 0
     # find age of newest file in hours
     if market_data_files:
         newest_file = max(market_data_files, key=lambda x: os.path.getctime(os.path.join(s.base_file_path, x)))
         file_creation_time = os.path.getctime(os.path.join(s.base_file_path, newest_file))
         file_age_hours = (time.time() - file_creation_time) / 3600
+
         print(f"Newest market data file: {newest_file}, age: {file_age_hours:.2f} hours")
 
     return market_data_files, file_age_hours
+
+def suitable_items_data_files_check(s):
+    # list all suitable item data files
+    files = os.listdir(s.base_file_path)
+    suitable_files = [f for f in files if f.startswith("suitable_items_data_") and f.endswith(".json")]
+    file_age_hours = 0
+    # find age of newest file in hours
+    if suitable_files:
+        newest_file = max(suitable_files, key=lambda x: os.path.getctime(os.path.join(s.base_file_path, x)))
+        file_creation_time = os.path.getctime(os.path.join(s.base_file_path, newest_file))
+        file_age_hours = (time.time() - file_creation_time) / 3600
+        print(f"Newest suitable items data file: {newest_file}, age: {file_age_hours:.2f} hours")
+
+    return suitable_files, file_age_hours
 
 def fetch_market_overview(s, dt_string):
     # fetch new market data
