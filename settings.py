@@ -23,6 +23,7 @@ class Settings:
 
         # advanced settings (can usually be left at default):
         self.max_old_files_to_keep = 10   # maximum number of old files to keep when cleaning up
+        self.run_interval = 60 * 60 * 1    # run interval in seconds
 
 
 
