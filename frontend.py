@@ -34,8 +34,7 @@ app.layout = html.Div([
         html.Label("Min Buyer Count: ", style={'color': '#E0E0E0', 'marginRight': '10px'}),
         dcc.Input(id='min-buyer-filter', type='number', value=0, style={'marginRight': '20px', 'width': '80px'}),
 
-        html.Label("Min Avg Volume: ", style={'color': '#E0E0E0', 'marginRight': '10px'}),
-        dcc.Input(id='min-avg-vol-filter', type='number', value=0, style={'marginRight': '20px', 'width': '80px'}),
+
         
         html.Label("Min Median Volume: ", style={'color': '#E0E0E0', 'marginRight': '10px'}),
         dcc.Input(id='min-median-vol-filter', type='number', value=0, style={'marginRight': '20px', 'width': '80px'}),
@@ -55,20 +54,22 @@ app.layout = html.Div([
         html.Label("Rarity Name: ", style={'color': '#E0E0E0', 'marginRight': '10px'}),
         dcc.Input(id='rarity-str-filter', type='text', placeholder='Name...', style={'marginRight': '20px', 'width': '100px'}),
 
-        html.Button('Apply', id='apply-filter-btn', n_clicks=0)
+        html.Button('Apply', id='apply-filter-btn', n_clicks=0, style={'marginRight': '10px'}),
+        html.Button('Reset', id='reset-filter-btn', n_clicks=0)
     ], style={'textAlign': 'center', 'marginBottom': '20px'}),
     
     html.Div([
         dash_table.DataTable(
             id='market-table',
             columns=[
+
                 {"name": "Item Name", "id": "name"},
-                {"name": "Item Tier", "id": "tier"},
-                {"name": "Rarity", "id": "rarityStr"},
-                {"name": "Buyer Count", "id": "buyer_count"},
-                {"name": "Median Volume", "id": "median_volume"},
-                {"name": "Total Volume", "id": "total_volume"},
                 {"name": "Median Price", "id": "median_price"},
+                {"name": "Buyer Count", "id": "buyer_count"},
+                {"name": "Total Volume", "id": "total_volume"},
+                {"name": "Median Volume", "id": "median_volume"},
+                {"name": "Rarity", "id": "rarityStr"},
+                {"name": "Tier", "id": "tier"},
             ],
             style_table={'overflowX': 'auto'},
             style_header={
@@ -150,15 +151,12 @@ def get_latest_data_file():
 
     return latest_file
 
-def apply_filters(df, min_buyer_count, name_filter, min_avg_vol, min_median_vol, min_median_price, min_tier, max_tier, rarity_filter, rarity_str_filter):
+def apply_filters(df, min_buyer_count, name_filter, min_median_vol, min_median_price, min_tier, max_tier, rarity_filter, rarity_str_filter):
     if name_filter:
         df = df[df['name'].str.contains(name_filter, case=False, na=False)]
     
     if min_buyer_count is not None and min_buyer_count > 0:
         df = df[df['buyer_count'] >= min_buyer_count]
-        
-    if min_avg_vol is not None and min_avg_vol > 0:
-        df = df[df['average_volume'] >= min_avg_vol]
 
     if min_median_vol is not None and min_median_vol > 0:
         df = df[df['median_volume'] >= min_median_vol]
@@ -184,10 +182,18 @@ def apply_filters(df, min_buyer_count, name_filter, min_avg_vol, min_median_vol,
     [Output('market-table', 'data'),
      Output('last-updated', 'children')],
     [Input('interval-component', 'n_intervals'),
-     Input('apply-filter-btn', 'n_clicks')],
+     Input('apply-filter-btn', 'n_clicks'),
+     Input('reset-filter-btn', 'n_clicks'),
+     Input('min-buyer-filter', 'n_submit'),
+     Input('name-filter', 'n_submit'),
+     Input('min-median-vol-filter', 'n_submit'),
+     Input('min-median-price-filter', 'n_submit'),
+     Input('min-tier-filter', 'n_submit'),
+     Input('max-tier-filter', 'n_submit'),
+     Input('rarity-filter', 'n_submit'),
+     Input('rarity-str-filter', 'n_submit')],
     [State('min-buyer-filter', 'value'),
      State('name-filter', 'value'),
-     State('min-avg-vol-filter', 'value'),
      State('min-median-vol-filter', 'value'),
      State('min-median-price-filter', 'value'),
      State('min-tier-filter', 'value'),
@@ -195,7 +201,9 @@ def apply_filters(df, min_buyer_count, name_filter, min_avg_vol, min_median_vol,
      State('rarity-filter', 'value'),
      State('rarity-str-filter', 'value')]
 )
-def update_metrics(n, n_clicks, min_buyer_count, name_filter, min_avg_vol, min_median_vol, min_median_price, min_tier, max_tier, rarity_filter, rarity_str_filter):
+def update_metrics(n, n_clicks_apply, n_clicks_reset, 
+                   s1, s2, s3, s4, s5, s6, s7, s8,
+                   min_buyer_count, name_filter, min_median_vol, min_median_price, min_tier, max_tier, rarity_filter, rarity_str_filter):
     latest_file = get_latest_data_file()
     
     if latest_file is None:
@@ -207,11 +215,7 @@ def update_metrics(n, n_clicks, min_buyer_count, name_filter, min_avg_vol, min_m
     except Exception as e:
         return [], f"Error loading file: {str(e)}"
     
-    try:
-        with open(latest_file, 'r') as f:
-            data = json.load(f)
-    except Exception as e:
-        return [], f"Error loading file: {str(e)}"
+
     
     # Process data for DataFrame
     df_data = []
@@ -219,6 +223,7 @@ def update_metrics(n, n_clicks, min_buyer_count, name_filter, min_avg_vol, min_m
         prices = [float(p) for p in item.get('unit_prices', [])]
         
         row = {
+
             'name': item.get('name', 'Unknown'),
             'score': round(item.get('score', 0), 4),
             'total_volume': item.get('total_volume', 0),
@@ -238,7 +243,13 @@ def update_metrics(n, n_clicks, min_buyer_count, name_filter, min_avg_vol, min_m
          return [], f"Data loaded from {os.path.basename(latest_file)} but it is empty."
 
     # Apply filters
-    df = apply_filters(df, min_buyer_count, name_filter, min_avg_vol, min_median_vol, min_median_price, min_tier, max_tier, rarity_filter, rarity_str_filter)
+    ctx = dash.callback_context
+    trigger_id = ctx.triggered[0]['prop_id'].split('.')[0] if ctx.triggered else None
+
+    if trigger_id == 'reset-filter-btn':
+        df = apply_filters(df, 0, "", 0, 0, None, None, None, "")
+    else:
+        df = apply_filters(df, min_buyer_count, name_filter, min_median_vol, min_median_price, min_tier, max_tier, rarity_filter, rarity_str_filter)
 
     # Timestamp from filename or modification time
     timestamp = os.path.getmtime(latest_file)
@@ -308,6 +319,23 @@ def update_details_table(selected_rows, rows):
     df_details = pd.DataFrame(details_data)
     
     return df_details.to_dict('records'), f"Buy Orders for: {item_name}"
+
+
+@app.callback(
+    [Output('name-filter', 'value'),
+     Output('min-buyer-filter', 'value'),
+     Output('min-median-vol-filter', 'value'),
+     Output('min-median-price-filter', 'value'),
+     Output('min-tier-filter', 'value'),
+     Output('max-tier-filter', 'value'),
+     Output('rarity-filter', 'value'),
+     Output('rarity-str-filter', 'value')],
+    [Input('reset-filter-btn', 'n_clicks')]
+)
+def reset_inputs(n_clicks):
+    if n_clicks:
+        return "", 0, 0, 0, None, None, None, ""
+    return dash.no_update
 
 if __name__ == '__main__':
     app.run(debug=False, host='0.0.0.0', port=8052)
