@@ -22,5 +22,5 @@ while True:
     print("Running cleanup script...")
     run_cleanup_script(s)
 
-    print("Sleeping for " + str(s.run_interval / 3600) + " hours, from " + datetime.now().strftime("%Y-%m-%d_%H-%M") + " to " + (datetime.now() + timedelta(seconds=s.run_interval)).strftime("%Y-%m-%d_%H-%M"))
+    print("Sleeping for " + str(s.run_interval / 3600) + " hours")# , from " + datetime.now().strftime("%Y-%m-%d_%H-%M") + " to " + (datetime.now() + timedelta(seconds=s.run_interval)).strftime("%Y-%m-%d_%H-%M"))
     sleep(s.run_interval)

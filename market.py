@@ -162,7 +162,7 @@ def extract_relevant_information(s, data_suitable_items):
         order_volumes = []
         for order in buy_orders:
             if order['priceThreshold'] is not None and order['quantity'] is not None:
-                unit_prices.append(order['priceThreshold'])
+                unit_prices.append(int(order['priceThreshold']))
                 quantities.append(order['quantity'])
                 claim_ids.append(order['claimEntityId'])
                 claim_names.append(order['claimName'])
@@ -172,14 +172,21 @@ def extract_relevant_information(s, data_suitable_items):
 
         extracted_data.append({
             'name': name,
+            'id': entry['item'].get('id'),
+            'tier': entry['item'].get('tier'),
+            'tag': entry['item'].get('tag'),
+            'rarity': entry['item'].get('rarity'),
+            'rarityStr': entry['item'].get('rarityStr'),
             'unit_prices': unit_prices,
             'quantities': quantities,
             'claim_ids': claim_ids,
             'claim_names': claim_names,
             'order_volumes': order_volumes,
+            'order_volumes': order_volumes,
             'total_volume': sum(order_volumes) if order_volumes else 0,
             'average_volume': mean(order_volumes) if order_volumes else 0,
             'median_volume': median(order_volumes) if order_volumes else 0,
+            'median_price': median(unit_prices) if unit_prices else 0,
         })
 
     return extracted_data
